@@ -1,0 +1,5 @@
+awsiotsdk==1.28.2
+
+boto3==1.34.65
+
+python-dotenv==1.0.1
