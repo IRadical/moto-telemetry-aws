@@ -20,7 +20,7 @@ def run_telemetry_sim():
             # 1. Simulate dynamic cornering sensor data
             speed = 90 + random.uniform(-5, 5) 
             ax = 0.1 
-            ay = 12
+            ay = random.uniform(2.0, 6.0) 
             az = 8.5 
             
             # 2. Process physical data
