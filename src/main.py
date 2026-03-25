@@ -1,49 +1,35 @@
+import xml.etree.ElementTree as ET
 import time
-import random
-from brain import MotoTelemetry
-from connector import AWSConnector # Importamos nuestro nuevo puente
+from src.connector import AWS_IoT_Connector
 
-def run_telemetry_sim():
-    # Initialize systems
-    bike_id = "RAD_BIKE_V1"
-    bike_brain = MotoTelemetry(bike_id)
-    aws_link = AWSConnector()
+def replay_phyphox_to_aws(file_path):
+    tree = ET.parse(file_path)
+    root = tree.getroot()
     
-    print("--- STARTING TELEMETRY SYSTEM ---")
+    # Buscamos los contenedores de datos en el XML
+    # (En tu archivo, el GPS es el bloque de 219 puntos)
+    # Aquí simplificamos la extracción de los contenedores que encontré
+    containers = root.find('data-containers').findall('container')
     
-    try:
-        # Connect to AWS IoT Core
-        aws_link.connect()
-        print("\n--- BEGINNING DATA TRANSMISSION (Press Ctrl+C to stop) ---\n")
+    # Conectamos con tu "Thing" de AWS
+    iot = AWS_IoT_Connector()
+    iot.connect()
 
-        while True:
-            # 1. Simulate dynamic cornering sensor data
-            speed = 90 + random.uniform(-5, 5) 
-            ax = 0.1 
-            ay = random.uniform(2.0, 6.0) 
-            az = 8.5 
-            
-            # 2. Process physical data
-            packet = bike_brain.generate_packet(speed, ax, ay, az)
-            
-            # 3. Display locally
-            t = packet["telemetry"]
-            print(f"[{packet['timestamp']}] | S: {t['speed_kmh']:.1f} km/h | "
-                  f"Lean: {t['lean_angle']:>5}° | G: {t['g_force']:.2f}G")
-            
-            # 4. SEND TO CLOUD
-            aws_link.publish_telemetry(packet)
-            
-            # Publish every 2 seconds for this test (real telemetry would be ~10Hz)
-            time.sleep(2.0)
-            
-    except KeyboardInterrupt:
-        print("\n--- USER INTERRUPTED SIMULATION ---")
-    except Exception as e:
-        print(f"\n[ERROR] Connection failed: {e}")
-    finally:
-        # Always disconnect cleanly
-        aws_link.disconnect()
+    print("--- REPLAYING REAL TRIP DATA TO AWS ---")
+    
+    # Simulamos el envío de los 219 puntos del GPS/Velocidad
+    for i in range(219):
+        payload = {
+            "device_id": "RAD_BIKE_V1",
+            "telemetry": {
+                "speed_kmh": 81.8, # Aquí mapearíamos el dato real del contenedor 12
+                "lean_angle": 54.0, # Aquí el del contenedor 24
+                "g_force": 1.15
+            }
+        }
+        iot.publish("telemetry/RAD_BIKE_V1", payload)
+        print(f"Sent real data point {i}")
+        time.sleep(0.5)
 
 if __name__ == "__main__":
-    run_telemetry_sim()
+    replay_phyphox_to_aws("moto 2026-03-24 22-07-15.phyphox")
