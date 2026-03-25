@@ -51,3 +51,13 @@ class AWSConnector:
         disconnect_future = self.mqtt_connection.disconnect()
         disconnect_future.result()
         print("Disconnected completely.")
+
+    def publish(self, topic, payload):
+        """Envía datos a AWS IoT Core usando un tópico específico."""
+        message = json.dumps(payload)
+        self.mqtt_connection.publish(
+            topic=topic,
+            payload=message,
+            qos=mqtt.QoS.AT_LEAST_ONCE
+        )
+        print(f"Published to [{topic}]")
