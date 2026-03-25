@@ -1,0 +1,10 @@
+{
+  "device_id": "string",
+  "timestamp": "ISO8601",
+  "telemetry": {
+    "speed_kmh": "float",
+    "lean_angle": "float",
+    "g_force": "float",
+    "imu_raw": { "x": "float", "y": "float", "z": "float" }
+  }
+}
