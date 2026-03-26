@@ -47,3 +47,6 @@ Thumbs.db
 data/
 logs/
 *.log
+.phyphox
+
+
