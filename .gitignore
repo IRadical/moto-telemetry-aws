@@ -47,6 +47,8 @@ Thumbs.db
 data/
 logs/
 *.log
-.phyphox
+*.phyphox
+*.png
+
 
 

@@ -6,18 +6,15 @@ import xml.etree.ElementTree as ET
 import numpy as np
 
 def draw_gauge(ax, value, min_val, max_val, title, unit, color):
-    """Dibuja un tacómetro semi-circular estilizado."""
-    # Fondo del arco
+
     wedge_bg = Wedge((0.5, 0.5), 0.4, 0, 180, width=0.08, color='#333333', alpha=0.3)
     ax.add_patch(wedge_bg)
     
-    # Arco de progreso
     progress = (value - min_val) / (max_val - min_val)
     progress = np.clip(progress, 0, 1)
     wedge_fg = Wedge((0.5, 0.5), 0.4, 180 - (progress * 180), 180, width=0.08, color=color)
     ax.add_patch(wedge_fg)
     
-    # Textos del tacómetro
     ax.text(0.5, 0.55, f"{value:.1f}", ha='center', va='center', color='white', fontsize=20, fontweight='bold')
     ax.text(0.5, 0.42, unit, ha='center', va='center', color='gray', fontsize=10)
     ax.text(0.5, 0.25, title, ha='center', va='center', color='white', fontsize=12, fontweight='bold')
@@ -42,7 +39,6 @@ def generate_advanced_dashboard(file_path):
                     vals.append(float(s) if s and s != 'nan' else 0.0)
                 data[c.text] = vals
 
-        # 1. Extracción y Limpieza
         lats = np.array(data.get('locLat', []))
         lons = np.array(data.get('locLon', []))
         t_gps = np.array(data.get('loc_time', []))
@@ -50,29 +46,23 @@ def generate_advanced_dashboard(file_path):
         roll = np.array(data.get('roll', []))
         t_roll = np.array(data.get('attT', []))
 
-        # Filtro de GPS válido
         mask = (lats != 0) & (lons != 0)
         lats, lons, t_gps, v_ms = lats[mask], lons[mask], t_gps[mask], v_ms[mask]
 
-        # 2. Sincronización y Física
-        # Corrección de inclinación: 180 - abs(roll) porque el cel va montado
         sync_lean = 180 - np.abs(np.interp(t_gps, t_roll, roll))
-        sync_lean = np.clip(sync_lean, 0, 90) # Filtro de seguridad
+        sync_lean = np.clip(sync_lean, 0, 90) 
 
         dt = np.diff(t_gps, prepend=t_gps[0])
         dt[dt <= 0] = 0.1
         accel = np.diff(v_ms, prepend=v_ms[0]) / dt
 
-        # Identificación de Hitos
         idx_max_v = np.argmax(v_ms)
         idx_max_accel = np.argmax(accel)
         idx_max_braking = np.argmin(accel)
 
-        # 3. Layout del Dashboard
         fig = plt.figure(figsize=(16, 10), facecolor='#121212')
         gs = fig.add_gridspec(3, 4)
         
-        # --- MAPA PRINCIPAL ---
         ax_map = fig.add_subplot(gs[:, :3])
         ax_map.set_facecolor('#121212')
         ax_map.plot(lons, lats, color='white', alpha=0.1, linewidth=1, zorder=1)
@@ -80,7 +70,6 @@ def generate_advanced_dashboard(file_path):
         point_sizes = 20 + (np.abs(accel) * 100)
         sc = ax_map.scatter(lons, lats, c=sync_lean, s=point_sizes, cmap='plasma', alpha=0.7, zorder=2)
         
-        # Anotaciones de Hitos en el Mapa
         ax_map.annotate(f'MAX SPEED\n{v_ms[idx_max_v]*3.6:.1f} km/h', 
                          xy=(lons[idx_max_v], lats[idx_max_v]), xytext=(15, 15),
                          textcoords='offset points', color='cyan', fontsize=10, fontweight='bold',
@@ -96,20 +85,17 @@ def generate_advanced_dashboard(file_path):
                          textcoords='offset points', color='#ff3131', fontsize=10, fontweight='bold',
                          arrowprops=dict(arrowstyle='->', color='#ff3131'))
 
-        # Estética del Mapa
         ax_map.set_xlabel("Longitude", color='white')
         ax_map.set_ylabel("Latitude", color='white')
         ax_map.tick_params(colors='white')
         for s in ax_map.spines.values(): s.set_color('#333333')
 
-        # --- TACÓMETROS (Derecha) ---
         ax_speed = fig.add_subplot(gs[0, 3])
         draw_gauge(ax_speed, np.max(v_ms)*3.6, 0, 140, "MAX SPEED", "km/h", "cyan")
         
         ax_lean = fig.add_subplot(gs[1, 3])
         draw_gauge(ax_lean, np.max(sync_lean), 0, 60, "MAX LEAN", "Degrees", "#f1c40f")
         
-        # --- CUADRO DE ESTADÍSTICAS ---
         ax_stats = fig.add_subplot(gs[2, 3])
         ax_stats.axis('off')
         stats_txt = (f"STATS LOG\n\n"
@@ -120,12 +106,12 @@ def generate_advanced_dashboard(file_path):
         ax_stats.text(0.1, 0.5, stats_txt, color='white', fontsize=13, family='monospace', va='center',
                       bbox=dict(facecolor='#1a1a1a', alpha=0.8, edgecolor='#333333', pad=10))
 
-        plt.tight_layout()
-        plt.savefig("dashboard_telemetry.png", dpi=200, facecolor='#121212')
+        output_name = "exports/dashboard_telemetry.png" # <--- Añade 'exports/'
+        plt.savefig(output_name, dpi=300, bbox_inches='tight')
         print("✅ DASHBOARD GENERATED: dashboard_telemetry.png")
 
     except Exception as e:
         print(f"Error: {e}")
 
 if __name__ == "__main__":
-    generate_advanced_dashboard("moto 2026-03-25 17-29-24.phyphox")
+    generate_advanced_dashboard("data/moto 2026-03-25 17-29-24.phyphox")
