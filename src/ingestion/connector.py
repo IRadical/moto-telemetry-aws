@@ -53,7 +53,6 @@ class AWSConnector:
         print("Disconnected completely.")
 
     def publish(self, topic, payload):
-        """Envía datos a AWS IoT Core usando un tópico específico."""
         message = json.dumps(payload)
         self.mqtt_connection.publish(
             topic=topic,

@@ -3,7 +3,7 @@ import time
 import os
 import math
 from dotenv import load_dotenv
-from src.connector import AWSConnector 
+from ingestion.connector import AWSConnector 
 
 load_dotenv()
 
