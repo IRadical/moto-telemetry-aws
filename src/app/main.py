@@ -1,33 +1,32 @@
-import xml.etree.ElementTree as ET
-import time
-from pathlib import Path
-from src.ingestion.connector import AWSConnector
+import os
+from src.core.parser import parse_phyphox
+from src.core.physics import process_physics
+from src.visuals.dashboard import create_report
 
-def replay_phyphox_to_aws(file_path):
-    tree = ET.parse(file_path)
-    root = tree.getroot()
+def main():
+    # Define el archivo de entrada y salida
+    file_name = "moto 2026-03-25 17-29-24.phyphox"
+    input_path = os.path.join("data", file_name)
+    output_name = "analisis_dinamo_400"
+    
+    if not os.path.exists(input_path):
+        print(f"❌ Error: No se encuentra el archivo {input_path}")
+        return
 
-    containers = root.find('data-containers').findall('container')
-
-    iot = AWSConnector()
-    iot.connect()
-
-    print("--- REPLAYING REAL TRIP DATA TO AWS ---")
-
-    for i in range(219):
-        payload = {
-            "device_id": "RAD_BIKE_V1",
-            "telemetry": {
-                "speed_kmh": 81.8,
-                "lean_angle": 54.0,
-                "g_force": 1.15
-            }
-        }
-        iot.publish("telemetry/RAD_BIKE_V1", payload)
-        print(f"Sent real data point {i}")
-        time.sleep(0.5)
+    print(f"🚀 Iniciando procesamiento de telemetría: {file_name}")
+    
+    # 1. Extraer
+    raw_data = parse_phyphox(input_path)
+    
+    # 2. Calcular (Física + Driver Profile)
+    physics_data = process_physics(raw_data)
+    
+    if physics_data:
+        # 3. Visualizar
+        create_report(physics_data, output_name)
+        print(f"✅ Dashboard generado con éxito en: exports/{output_name}.png")
+    else:
+        print("❌ Error: No se pudieron procesar los datos físicos.")
 
 if __name__ == "__main__":
-    project_root = Path(__file__).resolve().parents[2]
-    phyphox_file = project_root / "data" / "moto 2026-03-25 17-29-24.phyphox"
-    replay_phyphox_to_aws(phyphox_file)
+    main()
