@@ -33,13 +33,6 @@ def classify_lean_reference(lean_deg):
 
 
 def create_report(p, filename):
-    """
-    Genera dashboard dark mode con:
-    - mapa principal
-    - hitos de rendimiento
-    - gauges
-    - perfil del piloto
-    """
 
     m = p["metrics"]
     role = get_driver_role(m)
@@ -48,7 +41,6 @@ def create_report(p, filename):
     display_max_lean = normalize_lean_for_display(m["max_lean"])
     lean_reference_label = classify_lean_reference(display_max_lean)
 
-    # Normalización visual solo para el color del mapa
     if len(display_lean_series) > 0:
         lean_min = float(np.min(display_lean_series))
         lean_max = float(np.max(display_lean_series))
@@ -63,9 +55,6 @@ def create_report(p, filename):
     fig = plt.figure(figsize=(16, 10), facecolor='#121212')
     gs = fig.add_gridspec(3, 4)
 
-    # =========================================================================
-    # 1. MAPA PRINCIPAL
-    # =========================================================================
     ax_map = fig.add_subplot(gs[:, :3])
     ax_map.set_facecolor('#121212')
 
@@ -112,9 +101,6 @@ def create_report(p, filename):
         alpha=0.85
     )
 
-    # =========================================================================
-    # 2. HITOS DE RENDIMIENTO
-    # =========================================================================
     idx_max_v = int(np.argmax(p["v_kmh"]))
     idx_max_accel = int(np.argmax(p["accel"]))
     idx_max_braking = int(np.argmin(p["accel"]))
@@ -168,17 +154,17 @@ def create_report(p, filename):
     ax_map.annotate(
         f'MAX LEAN\n{display_lean_series[idx_max_lean]:.1f}°\n{lean_reference_label}',
         xy=(p["lons"][idx_max_lean], p["lats"][idx_max_lean]),
-        xytext=(-15, 30),
+        xytext=(-95, 45),
         textcoords='offset points',
         color='#f1c40f',
         fontsize=9,
         fontweight='bold',
+        ha='left',
+        va='bottom',
         arrowprops=dict(arrowstyle='->', color='#f1c40f', alpha=0.8)
     )
 
-    # =========================================================================
-    # 3. GAUGES
-    # =========================================================================
+
     draw_gauge(
         fig.add_subplot(gs[0, 3]),
         float(np.max(p["v_kmh"])),
@@ -199,9 +185,6 @@ def create_report(p, filename):
         "#f1c40f"
     )
 
-    # =========================================================================
-    # 4. PANEL DE TEXTO
-    # =========================================================================
     ax_stats = fig.add_subplot(gs[2, 3])
     ax_stats.axis('off')
 
@@ -235,9 +218,6 @@ def create_report(p, filename):
         bbox=dict(facecolor='#1a1a1a', pad=12, edgecolor='#333333')
     )
 
-    # =========================================================================
-    # 5. EXPORTAR
-    # =========================================================================
     plt.tight_layout()
     os.makedirs("exports", exist_ok=True)
     plt.savefig(f"exports/{filename}.png", facecolor='#121212')
