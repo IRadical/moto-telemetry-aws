@@ -7,7 +7,6 @@ load_dotenv()
 def purge_fake_data(bike_id):
     print(f"--- PURGING DATA FOR: {bike_id} ---")
     
-    # Conexión a DynamoDB
     dynamodb = boto3.resource(
         'dynamodb',
         region_name='us-east-2',
@@ -17,8 +16,7 @@ def purge_fake_data(bike_id):
     table = dynamodb.Table('MotoTelemetry_Dev')
 
     try:
-        # 1. Escaneamos para encontrar todas las llaves (device_id y timestamp)
-        # Nota: Scan es costoso en tablas enormes, pero para nuestra Dev es perfecto.
+
         response = table.scan(
             ProjectionExpression="device_id, #ts",
             ExpressionAttributeNames={"#ts": "timestamp"},
@@ -33,7 +31,6 @@ def purge_fake_data(bike_id):
 
         print(f"Found {len(items)} fake records. Starting deletion...")
 
-        # 2. Borrado masivo (Batch Delete)
         with table.batch_writer() as batch:
             for item in items:
                 batch.delete_item(

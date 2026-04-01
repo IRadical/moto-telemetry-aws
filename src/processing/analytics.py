@@ -17,7 +17,6 @@ def generate_session_report(bike_id):
     table = dynamodb.Table('MotoTelemetry_Dev')
 
     try:
-        # Traemos TODOS los registros de esta moto
         response = table.query(
             KeyConditionExpression=Key('device_id').eq(bike_id)
         )
@@ -27,7 +26,6 @@ def generate_session_report(bike_id):
             print("No data found to analyze.")
             return
 
-        # Procesamiento de métricas
         speeds = [float(i['telemetry']['speed_kmh']) for i in items]
         leans = [abs(float(i['telemetry']['lean_angle'])) for i in items]
         gs = [float(i['telemetry']['g_force']) for i in items]

@@ -17,11 +17,11 @@ def inspect_latest_data(bike_id, limit=5):
     table = dynamodb.Table('MotoTelemetry_Dev')
 
     try:
-        # Escaneamos la tabla para ver el conteo total y los últimos registros
+
         response = table.query(
             KeyConditionExpression=Key('device_id').eq(bike_id),
             Limit=limit,
-            ScanIndexForward=False  # Trae los más recientes primero
+            ScanIndexForward=False  
         )
         
         items = response.get('Items', [])

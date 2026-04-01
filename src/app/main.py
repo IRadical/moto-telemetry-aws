@@ -4,8 +4,8 @@ from src.core.physics import process_physics
 from src.visuals.dashboard import create_report
 
 def main():
-    # Define el archivo de entrada y salida
-    file_name = "moto 2026-03-25 17-29-24.phyphox"
+ 
+    file_name = "moto 2026-03-26 16-10-28.phyphox"
     input_path = os.path.join("data", file_name)
     output_name = "analisis_dinamo_400"
     
@@ -15,14 +15,14 @@ def main():
 
     print(f"🚀 Iniciando procesamiento de telemetría: {file_name}")
     
-    # 1. Extraer
+
     raw_data = parse_phyphox(input_path)
     
-    # 2. Calcular (Física + Driver Profile)
+
     physics_data = process_physics(raw_data)
     
     if physics_data:
-        # 3. Visualizar
+
         create_report(physics_data, output_name)
         print(f"✅ Dashboard generado con éxito en: exports/{output_name}.png")
     else:
