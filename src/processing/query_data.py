@@ -11,10 +11,9 @@ def fetch_recent_telemetry(bike_id, limit=5):
     table = dynamodb.Table('MotoTelemetry_Dev')
     
     try:
-        # Query the database
         response = table.query(
             KeyConditionExpression=Key('device_id').eq(bike_id),
-            ScanIndexForward=False, # Get newest records first
+            ScanIndexForward=False, 
             Limit=limit
         )
         

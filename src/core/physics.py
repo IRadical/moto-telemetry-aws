@@ -27,10 +27,7 @@ def normalize_quaternions(w, x, y, z):
 
 
 def compute_lean_from_quaternion(data, t_gps):
-    """
-    Calcula la inclinación total respecto a la vertical usando cuaterniones.
-    Es más estable que usar Euler roll.
-    """
+
     t_att = np.array(data.get('attT', [])).flatten()
     att_w = np.array(data.get('attW', [])).flatten()
     att_x = np.array(data.get('attX', [])).flatten()
@@ -53,13 +50,13 @@ def compute_lean_from_quaternion(data, t_gps):
 
     sync_w, sync_x, sync_y, sync_z = normalize_quaternions(sync_w, sync_x, sync_y, sync_z)
 
-    # r33 = componente Z del eje vertical transformado
+
     r33 = 1 - 2 * (sync_x**2 + sync_y**2)
 
-    # inclinación total respecto a vertical
+
     lean = np.degrees(np.arccos(np.clip(r33, -1.0, 1.0)))
 
-    # Calibración con tramo inicial para quitar offset del soporte
+
     calib_count = min(10, len(lean))
     baseline = np.median(lean[:calib_count]) if calib_count > 0 else 0.0
     lean = np.abs(lean - baseline)
@@ -68,10 +65,7 @@ def compute_lean_from_quaternion(data, t_gps):
 
 
 def compute_lean_from_roll(data, t_gps):
-    """
-    Fallback si no hay cuaterniones:
-    usa roll con media circular y diferencia angular corta.
-    """
+
     roll = np.array(data.get('roll', [])).flatten()
     t_roll = np.array(data.get('attT', [])).flatten()
 
@@ -93,17 +87,12 @@ def compute_lean_from_roll(data, t_gps):
 
 
 def process_physics(data):
-    """
-    Procesa telemetría física para mapa/dashboard.
-    Prioriza cuaterniones para lean angle.
-    """
-    # GPS
+
     t_gps = np.array(data.get('loc_time', [])).flatten()
     lats = np.array(data.get('locLat', [])).flatten()
     lons = np.array(data.get('locLon', [])).flatten()
     v_ms = np.nan_to_num(np.array(data.get('locV', []))).flatten()
 
-    # IMU lineal
     lin_x = np.array(data.get('linX', [])).flatten()
     lin_y = np.array(data.get('linY', [])).flatten()
     lin_z = np.array(data.get('linZ', [])).flatten()
@@ -112,9 +101,6 @@ def process_physics(data):
     if len(t_gps) < 2 or len(lats) < 2 or len(lons) < 2:
         return None
 
-    # =========================================================================
-    # 1. LEAN ANGLE
-    # =========================================================================
     sync_lean_real = compute_lean_from_quaternion(data, t_gps)
 
     if sync_lean_real is None:
@@ -123,12 +109,9 @@ def process_physics(data):
     if sync_lean_real is None:
         sync_lean_real = np.zeros_like(t_gps, dtype=float)
 
-    # Cap físico/visual basado en tu referencia moto
+
     sync_lean_real = np.clip(sync_lean_real, 0.0, LEAN_REFERENCE_CAP)
 
-    # =========================================================================
-    # 2. VELOCIDAD Y ACELERACIÓN LONGITUDINAL
-    # =========================================================================
     v_kmh = v_ms * 3.6
 
     dt_gps = np.diff(t_gps, prepend=t_gps[0])
@@ -137,9 +120,7 @@ def process_physics(data):
     raw_accel_gps = np.diff(v_ms, prepend=v_ms[0]) / dt_gps
     clean_accel_ms2 = smooth_signal(raw_accel_gps, window=3)
 
-    # =========================================================================
-    # 3. FUERZA G
-    # =========================================================================
+
     if len(lin_x) > 0 and len(lin_y) > 0 and len(lin_z) > 0 and len(t_lin) > 1:
         raw_g_ms2 = np.sqrt(lin_x**2 + lin_y**2 + lin_z**2)
         clean_g_ms2 = smooth_signal(raw_g_ms2, window=10)
@@ -149,9 +130,7 @@ def process_physics(data):
         sync_g = np.abs(clean_accel_ms2) / 9.81
         max_g_linear = float(np.max(sync_g))
 
-    # =========================================================================
-    # 4. MÉTRICAS
-    # =========================================================================
+
     max_lean = float(np.max(sync_lean_real))
     avg_speed = float(np.mean(v_kmh))
     volatility = float(np.std(v_kmh))

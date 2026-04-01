@@ -25,8 +25,7 @@ def export_to_csv(bike_id):
             return
 
         filename = f"telemetry_{bike_id}.csv"
-        
-        # Definimos las columnas
+
         headers = ['timestamp', 'speed_kmh', 'lean_angle', 'g_force']
 
         with open(filename, 'w', newline='') as f:
